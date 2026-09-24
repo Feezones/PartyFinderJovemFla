@@ -49,6 +49,8 @@ const grid = document.getElementById("pt-grid");
 const emptyState = document.getElementById("empty-state");
 const countEl = document.getElementById("pt-count");
 const toast = document.getElementById("toast");
+// adiciona com os outros DOM refs
+const timeInput = document.getElementById("pt-time");
 
 // ---------- Nickname persistence ----------
 nickInput.value = localStorage.getItem("jovemfla_nick") || "";
@@ -89,15 +91,16 @@ createBtn.addEventListener("click", async () => {
   if (!nick) return;
   createBtn.disabled = true;
   try {
-    await addDoc(partiesRef, {
-      dg: dgSelect.value,
-      createdBy: nick,
-      createdAt: serverTimestamp(),
-      tank: null,
-      hitter1: null,
-      hitter2: null,
-      hitterSuporte: null
-    });
+await addDoc(partiesRef, {
+  dg: dgSelect.value,
+  createdBy: nick,
+  createdAt: serverTimestamp(),
+  scheduledTime: timeInput.value || null,   // ← novo campo
+  tank: null,
+  hitter1: null,
+  hitter2: null,
+  hitterSuporte: null
+});
     showToast("PT criada!");
   } catch (err) {
     console.error(err);
@@ -178,14 +181,20 @@ function renderParty(id, data) {
   head.innerHTML = `
     <div>
       <div class="dg-name">${escapeHtml(data.dg)}</div>
-      <div class="pt-meta">host: ${escapeHtml(data.createdBy)} · ${timeAgo(data.createdAt)}</div>
+      <div class="pt-meta">
+  host: ${escapeHtml(data.createdBy)}
+  ${data.scheduledTime ? `· ⏰ ${data.scheduledTime}` : ""}
+  · ${timeAgo(data.createdAt)}
+</div>
     </div>
   `;
+if (nick === data.createdBy) {
   const closeBtn = document.createElement("button");
   closeBtn.className = "close-btn";
   closeBtn.textContent = "Fechar PT";
   closeBtn.addEventListener("click", () => closeParty(id));
   head.appendChild(closeBtn);
+}
   card.appendChild(head);
 
   const slotsWrap = document.createElement("div");

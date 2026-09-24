@@ -37,12 +37,11 @@ if (!isFirebaseConfigured) {
 // Lista de DGs da guild — edite livremente para bater com as
 // dungeons que vocês realmente correm no DMO.
 export const DG_LIST = [
-  "EDG",
-  "ZDG - Zhuqiaomon",
-  "BDG - Baihumon",
-  "QDG - Qinglongmon",
-  "XDG - Xuanwumon",
-  "Raid - Dark Masters",
-  "Raid - Analogman",
+  "Susanomon DG - Vice",
+  "Gulus DG - Brace",
+  "Chimairamon DG - Brinco",
+  "Dark Web DG - Colar",
+  "MilfHaim - Anel",
+  "DataDungeon - Suit",
   "Outra (avisar no chat)"
 ];

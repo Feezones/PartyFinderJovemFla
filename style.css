@@ -343,3 +343,27 @@ footer {
   font-family: "JetBrains Mono", monospace;
   padding: 30px 20px 40px;
 }
+
+.field input[type="time"],
+.field input[type="datetime-local"] {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: var(--radius);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.field input[type="time"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Remove o fundo branco do picker nativo no Chrome */
+::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(130deg);
+  cursor: pointer;
+}
