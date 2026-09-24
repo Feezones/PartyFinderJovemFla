@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JovemFla · Terminal de PTs</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💠</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="hud">
+  <div>
+    <div class="brand">
+      <span class="guild mono">Jovem<span>Fla</span></span>
+    </div>
+    <div class="subtitle">Terminal de formação de PT · Digimon Masters</div>
+  </div>
+  <div class="identity">
+    <label for="nick">seu nick:</label>
+    <input id="nick" type="text" placeholder="ex: Taichi" maxlength="24" autocomplete="off" />
+  </div>
+</header>
+
+<main>
+  <section class="panel create-pt">
+    <h2>NOVA PT</h2>
+    <p class="hint">Escolha a DG e crie uma sala. Qualquer pessoa da guild com o link pode entrar em uma vaga em tempo real.</p>
+
+    <div class="field">
+      <label for="dg-select">Dungeon</label>
+      <select id="dg-select"></select>
+    </div>
+
+    <button id="create-btn" class="primary">Criar PT</button>
+  </section>
+
+  <section class="parties">
+    <h2>PTs ativas <span class="count mono" id="pt-count">0</span></h2>
+    <div id="empty-state" class="empty-state">Nenhuma PT aberta agora. Crie a primeira ao lado.</div>
+    <div class="pt-grid" id="pt-grid"></div>
+  </section>
+</main>
+
+<footer>JovemFla PT Terminal — sincronizado via Firebase</footer>
+<div class="toast" id="toast"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
