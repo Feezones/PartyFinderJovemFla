@@ -49,6 +49,12 @@ const grid       = document.getElementById("pt-grid");
 const emptyState = document.getElementById("empty-state");
 const countEl    = document.getElementById("pt-count");
 const toast      = document.getElementById("toast");
+const partySwitchModal = document.getElementById("party-switch-modal");
+const partySwitchMessage = document.getElementById("party-switch-message");
+const partySwitchCancel = document.getElementById("party-switch-cancel");
+const partySwitchConfirm = document.getElementById("party-switch-confirm");
+const activeParties = new Map();
+let resolvePartySwitch = null;
 
 // ---------- Flatpickr ----------
 let selectedDateTime = null;
@@ -71,6 +77,7 @@ flatpickr("#pt-time", {
   },
   onChange: (dates) => {
     selectedDateTime = dates[0] ?? null;
+    syncCreateBtn();
   }
 });
 
@@ -87,7 +94,12 @@ function getNick() {
 }
 
 function syncCreateBtn() {
-  createBtn.disabled = getNick().length === 0;
+  const nick = getNick();
+  const currentParty = findBlockingPartyForNew(nick);
+  createBtn.disabled = nick.length === 0 || Boolean(currentParty);
+  createBtn.title = currentParty
+    ? "Escolha um horário com pelo menos 1 hora de diferença da sua PT atual."
+    : "";
 }
 syncCreateBtn();
 
@@ -112,6 +124,11 @@ function showToast(msg) {
 createBtn.addEventListener("click", async () => {
   const nick = getNick();
   if (!nick) return;
+  const currentParty = findBlockingPartyForNew(nick);
+  if (currentParty) {
+    showToast("Escolha um horário com pelo menos 1 hora de diferença.");
+    return;
+  }
   createBtn.disabled = true;
   try {
     await addDoc(partiesRef, {
@@ -134,30 +151,117 @@ createBtn.addEventListener("click", async () => {
 });
 
 // ---------- Join / leave ----------
-async function joinSlot(partyId, slotKey) {
+function getPartiesForNick(nick) {
+  if (!nick) return [];
+  return [...activeParties].reduce((parties, [id, data]) => {
+    if (SLOT_DEFS.some((slot) => data[slot.key] === nick)) {
+      parties.push({ id, data });
+    }
+    return parties;
+  }, []);
+}
+
+function getPartyTime(data) {
+  if (!data?.scheduledTime) return null;
+  const time = new Date(data.scheduledTime).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+function canOverlapParties(firstParty, secondParty) {
+  const firstTime = getPartyTime(firstParty);
+  const secondTime = getPartyTime(secondParty);
+  return firstTime !== null && secondTime !== null &&
+    Math.abs(firstTime - secondTime) >= 60 * 60 * 1000;
+}
+
+function findBlockingPartyForNew(nick) {
+  const newParty = { scheduledTime: selectedDateTime?.toISOString() ?? null };
+  return getPartiesForNick(nick).find(({ data }) => !canOverlapParties(data, newParty)) || null;
+}
+
+function findPartyForNick(nick) {
+  if (!nick) return null;
+  return getPartiesForNick(nick)[0] || null;
+}
+
+function confirmPartySwitch(currentParty, targetParty) {
+  return new Promise((resolve) => {
+    resolvePartySwitch = resolve;
+    partySwitchMessage.textContent = `Você já está em "${currentParty.data.dg}". Deseja sair e entrar em "${targetParty}"?`;
+    partySwitchModal.hidden = false;
+    partySwitchConfirm.focus();
+  });
+}
+
+function finishPartySwitch(confirmed) {
+  partySwitchModal.hidden = true;
+  const resolve = resolvePartySwitch;
+  resolvePartySwitch = null;
+  if (resolve) resolve(confirmed);
+}
+
+partySwitchModal.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (button === partySwitchCancel) finishPartySwitch(false);
+  if (button === partySwitchConfirm) finishPartySwitch(true);
+  if (event.target === partySwitchModal) finishPartySwitch(false);
+});
+partySwitchModal.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") finishPartySwitch(false);
+});
+
+async function joinSlot(partyId, slotKey, conflictingParties = []) {
   const nick = getNick();
   if (!nick) {
     showToast("Digite seu nick antes de entrar em uma PT.");
     return;
   }
-  const ref = doc(db, "parties", partyId);
+  const targetRef = doc(db, "parties", partyId);
+  const currentRefs = conflictingParties.map((party) => doc(db, "parties", party.id));
   try {
     await runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) throw new Error("PT não existe mais.");
-      const data = snap.data();
+      const targetSnap = await tx.get(targetRef);
+      if (!targetSnap.exists()) throw new Error("PT não existe mais.");
+      const targetData = targetSnap.data();
 
-      const alreadyKey = SLOT_DEFS.find((s) => data[s.key] === nick)?.key;
-      if (alreadyKey && alreadyKey !== slotKey) {
-        tx.update(ref, { [alreadyKey]: null });
+      if (targetData[slotKey] === nick) return;
+      if (targetData[slotKey]) throw new Error("Essa vaga acabou de ser preenchida.");
+
+      const currentSlotInSamePt = SLOT_DEFS.find((slot) => targetData[slot.key] === nick)?.key;
+      if (currentSlotInSamePt && currentSlotInSamePt !== slotKey) {
+        tx.update(targetRef, { [currentSlotInSamePt]: null });
       }
 
-      if (data[slotKey]) throw new Error("Essa vaga acabou de ser preenchida.");
-      tx.update(ref, { [slotKey]: nick });
+      for (let index = 0; index < currentRefs.length; index += 1) {
+        const currentSnap = await tx.get(currentRefs[index]);
+        if (currentSnap.exists()) {
+          const updates = {};
+          SLOT_DEFS.forEach((slot) => {
+            if (currentSnap.data()[slot.key] === nick) updates[slot.key] = null;
+          });
+          if (Object.keys(updates).length) tx.update(currentRefs[index], updates);
+        }
+      }
+      tx.update(targetRef, { [slotKey]: nick });
     });
+    syncCreateBtn();
   } catch (err) {
     showToast(err.message || "Não foi possível entrar na vaga.");
   }
+}
+
+async function requestJoinSlot(partyId, slotKey, targetParty) {
+  const currentParties = getPartiesForNick(getNick()).filter((party) => party.id !== partyId);
+  const targetData = activeParties.get(partyId);
+  const conflictingParties = currentParties.filter(
+    (party) => !targetData || !canOverlapParties(party.data, targetData)
+  );
+
+  if (conflictingParties.length) {
+    const confirmed = await confirmPartySwitch(conflictingParties[0], targetParty);
+    if (!confirmed) return;
+  }
+  await joinSlot(partyId, slotKey, conflictingParties);
 }
 
 async function leaveSlot(partyId, slotKey) {
@@ -264,7 +368,7 @@ function renderParty(id, data) {
       const btn = document.createElement("button");
       btn.className = "slot-btn";
       btn.textContent = "Entrar";
-      btn.addEventListener("click", () => joinSlot(id, def.key));
+      btn.addEventListener("click", () => requestJoinSlot(id, def.key, data.dg));
       row.appendChild(btn);
     }
 
@@ -281,6 +385,9 @@ if (partiesRef) {
   onSnapshot(
     q,
     (snapshot) => {
+      activeParties.clear();
+      snapshot.forEach((docSnap) => activeParties.set(docSnap.id, docSnap.data()));
+      syncCreateBtn();
       grid.innerHTML = "";
       countEl.textContent = snapshot.size;
       if (snapshot.empty) {

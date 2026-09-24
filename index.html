@@ -80,6 +80,17 @@
 <footer>JovemFla PT Terminal</footer>
 <div class="toast" id="toast"></div>
 
+<div class="modal-backdrop" id="party-switch-modal" hidden>
+  <div class="party-switch-modal" role="dialog" aria-modal="true" aria-labelledby="party-switch-title">
+    <h2 id="party-switch-title">Trocar de PT?</h2>
+    <p id="party-switch-message"></p>
+    <div class="modal-actions">
+      <button id="party-switch-cancel" class="modal-btn secondary" type="button">Não</button>
+      <button id="party-switch-confirm" class="modal-btn primary-modal" type="button">Sim, trocar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script type="module" src="app.js"></script>
 </body>
