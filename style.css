@@ -447,6 +447,52 @@ main {
 
 .field select:focus { outline: none; border-color: var(--accent); }
 
+.min-passes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.check-row input {
+  accent-color: var(--accent);
+}
+
+.min-passes-wrap[hidden] {
+  display: none;
+}
+
+.min-passes-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.min-passes-wrap label {
+  color: var(--muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+}
+
+.min-passes-wrap input {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: var(--radius);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+}
+
 button.primary {
   width: 100%;
   padding: 11px;

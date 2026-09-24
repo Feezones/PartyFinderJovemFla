@@ -40,6 +40,17 @@
       <input id="pt-time" type="text" placeholder="Selecione data e hora..." readonly />
     </div>
 
+    <div class="field min-passes-field">
+      <label class="check-row" for="min-passes-toggle">
+        <input id="min-passes-toggle" type="checkbox" />
+        <span>Exigir mínimo de passes</span>
+      </label>
+      <div id="min-passes-wrap" class="min-passes-wrap" hidden>
+        <label for="min-passes-input">Quantidade mínima</label>
+        <input id="min-passes-input" type="number" min="0" step="10" value="200" placeholder="200" />
+      </div>
+    </div>
+
     <button id="create-btn" class="primary">Criar PT</button>
   </section>
 

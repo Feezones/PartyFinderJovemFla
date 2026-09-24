@@ -49,7 +49,11 @@ const grid       = document.getElementById("pt-grid");
 const emptyState = document.getElementById("empty-state");
 const countEl    = document.getElementById("pt-count");
 const toast      = document.getElementById("toast");
+const minPassesToggle = document.getElementById("min-passes-toggle");
+const minPassesWrap = document.getElementById("min-passes-wrap");
+const minPassesInput = document.getElementById("min-passes-input");
 const partySwitchModal = document.getElementById("party-switch-modal");
+const partySwitchTitle = document.getElementById("party-switch-title");
 const partySwitchMessage = document.getElementById("party-switch-message");
 const partySwitchCancel = document.getElementById("party-switch-cancel");
 const partySwitchConfirm = document.getElementById("party-switch-confirm");
@@ -93,6 +97,16 @@ function getNick() {
   return nickInput.value.trim();
 }
 
+function syncMinPassesToggle() {
+  minPassesWrap.hidden = !minPassesToggle.checked;
+  if (!minPassesToggle.checked) {
+    minPassesInput.value = "200";
+  }
+}
+
+minPassesToggle.addEventListener("change", syncMinPassesToggle);
+syncMinPassesToggle();
+
 function syncCreateBtn() {
   const nick = getNick();
   const currentParty = findBlockingPartyForNew(nick);
@@ -129,6 +143,13 @@ createBtn.addEventListener("click", async () => {
     showToast("Escolha um horário com pelo menos 1 hora de diferença.");
     return;
   }
+
+  const minPasses = minPassesToggle.checked ? Number(minPassesInput.value) : 0;
+  if (minPassesToggle.checked && (!Number.isFinite(minPasses) || minPasses < 0)) {
+    showToast("Informe um valor válido para o mínimo de passes.");
+    return;
+  }
+
   createBtn.disabled = true;
   try {
     await addDoc(partiesRef, {
@@ -136,6 +157,7 @@ createBtn.addEventListener("click", async () => {
       createdBy: nick,
       createdAt: serverTimestamp(),
       scheduledTime: selectedDateTime ? selectedDateTime.toISOString() : null,
+      minPasses,
       tank: null,
       hitter1: null,
       hitter2: null,
@@ -187,7 +209,20 @@ function findPartyForNick(nick) {
 function confirmPartySwitch(currentParty, targetParty) {
   return new Promise((resolve) => {
     resolvePartySwitch = resolve;
+    partySwitchTitle.textContent = "Trocar de PT?";
+    partySwitchConfirm.textContent = "Sim, trocar";
     partySwitchMessage.textContent = `Você já está em "${currentParty.data.dg}". Deseja sair e entrar em "${targetParty}"?`;
+    partySwitchModal.hidden = false;
+    partySwitchConfirm.focus();
+  });
+}
+
+function confirmPartyEntry(targetParty, minPasses) {
+  return new Promise((resolve) => {
+    resolvePartySwitch = resolve;
+    partySwitchTitle.textContent = "Aceitar requisito?";
+    partySwitchConfirm.textContent = "Sim, entrar";
+    partySwitchMessage.textContent = `Essa PT exige no mínimo ${minPasses} passes. Você confirma que está de acordo em cumprir esse requisito?`;
     partySwitchModal.hidden = false;
     partySwitchConfirm.focus();
   });
@@ -251,11 +286,17 @@ async function joinSlot(partyId, slotKey, conflictingParties = []) {
 }
 
 async function requestJoinSlot(partyId, slotKey, targetParty) {
-  const currentParties = getPartiesForNick(getNick()).filter((party) => party.id !== partyId);
-  const targetData = activeParties.get(partyId);
+  const nick = getNick();
+  const targetData = activeParties.get(partyId) || {};
+  const currentParties = getPartiesForNick(nick).filter((party) => party.id !== partyId);
   const conflictingParties = currentParties.filter(
     (party) => !targetData || !canOverlapParties(party.data, targetData)
   );
+
+  if (targetData.minPasses > 0) {
+    const confirmed = await confirmPartyEntry(targetParty, targetData.minPasses);
+    if (!confirmed) return;
+  }
 
   if (conflictingParties.length) {
     const confirmed = await confirmPartySwitch(conflictingParties[0], targetParty);
@@ -325,6 +366,7 @@ function renderParty(id, data) {
       <div class="pt-meta">
         host: ${escapeHtml(data.createdBy)}
         ${data.scheduledTime ? `· ⏰ ${formatScheduled(data.scheduledTime)}` : ""}
+        ${Number(data.minPasses) > 0 ? `· 🏁 ${Number(data.minPasses)} passes` : ""}
         · ${timeAgo(data.createdAt)}
       </div>
     </div>
