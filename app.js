@@ -309,6 +309,7 @@ const chatMessages = document.getElementById("chat-messages");
 const chatEmpty    = document.getElementById("chat-empty");
 const msgCount     = document.getElementById("msg-count");
 const chatToggle   = document.getElementById("chat-toggle");
+const chatWrap     = document.querySelector(".chat-wrap");
 
 function formatTime(ts) {
   return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -419,8 +420,9 @@ chatInput.addEventListener("keydown", (e) => {
 chatSend.addEventListener("click", sendChatMessage);
 
 chatToggle.addEventListener("click", () => {
-  const isCollapsed = document.querySelector(".chat-wrap").classList.toggle("collapsed");
-  chatToggle.textContent = isCollapsed ? "+" : "−";
+  const isCollapsed = chatWrap.classList.toggle("collapsed");
+  chatToggle.textContent = isCollapsed ? "chat" : "−";
   chatToggle.setAttribute("aria-label", isCollapsed ? "Expandir chat" : "Minimizar chat");
   chatToggle.title = isCollapsed ? "Expandir chat" : "Minimizar chat";
+  if (!isCollapsed) chatMessages.scrollTop = chatMessages.scrollHeight;
 });

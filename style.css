@@ -124,6 +124,11 @@ main {
 
 .chat-wrap.collapsed {
   height: auto;
+  width: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
 }
 
 /* ── header do chat ── */
@@ -144,9 +149,9 @@ main {
 }
 
 .chat-toggle {
-  width: 24px;
+  min-width: 24px;
   height: 24px;
-  padding: 0;
+  padding: 0 7px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: transparent;
@@ -158,6 +163,45 @@ main {
 .chat-toggle:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.chat-wrap.collapsed .chat-header {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.chat-wrap.collapsed .chat-header-left,
+.chat-wrap.collapsed .online-count {
+  display: none;
+}
+
+.chat-wrap.collapsed .chat-header-actions {
+  display: block;
+}
+
+.chat-wrap.collapsed .chat-toggle {
+  height: 42px;
+  min-width: 76px;
+  padding: 0 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #06231f;
+  box-shadow: 0 8px 22px rgba(94, 234, 212, 0.3);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.chat-wrap.collapsed .chat-toggle:hover {
+  background: #7ff2df;
+  color: #06231f;
+}
+
+.chat-wrap.collapsed .chat-messages,
+.chat-wrap.collapsed .chat-input-area {
+  display: none;
 }
 
 .chat-header-left {
