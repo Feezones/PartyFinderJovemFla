@@ -50,7 +50,29 @@ const emptyState = document.getElementById("empty-state");
 const countEl = document.getElementById("pt-count");
 const toast = document.getElementById("toast");
 // adiciona com os outros DOM refs
-const timeInput = document.getElementById("pt-time");
+// substitui a linha: const timeInput = document.getElementById("pt-time");
+let selectedDateTime = null;
+
+flatpickr("#pt-time", {
+  enableTime: true,
+  dateFormat: "d/m/Y H:i",
+  time_24hr: true,
+  minDate: "today",
+  locale: {
+    firstDayOfWeek: 0,
+    weekdays: {
+      shorthand: ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"],
+      longhand: ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"]
+    },
+    months: {
+      shorthand: ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],
+      longhand: ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+    }
+  },
+  onChange: (dates) => {
+    selectedDateTime = dates[0] ?? null;
+  }
+});
 
 // ---------- Nickname persistence ----------
 nickInput.value = localStorage.getItem("jovemfla_nick") || "";
@@ -95,7 +117,7 @@ await addDoc(partiesRef, {
   dg: dgSelect.value,
   createdBy: nick,
   createdAt: serverTimestamp(),
-  scheduledTime: timeInput.value || null,   // ← novo campo
+  scheduledTime: selectedDateTime ? selectedDateTime.toISOString() : null,
   tank: null,
   hitter1: null,
   hitter2: null,

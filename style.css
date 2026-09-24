@@ -344,26 +344,105 @@ footer {
   padding: 30px 20px 40px;
 }
 
-.field input[type="time"],
-.field input[type="datetime-local"] {
+
+
+.flatpickr-calendar {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  font-family: "JetBrains Mono", monospace !important;
+  color: var(--text) !important;
+}
+
+.flatpickr-months,
+.flatpickr-weekdays,
+span.flatpickr-weekday {
+  background: var(--panel-2) !important;
+  color: var(--muted) !important;
+  fill: var(--muted) !important;
+}
+
+.flatpickr-day {
+  color: var(--text) !important;
+  border-radius: var(--radius) !important;
+}
+
+.flatpickr-day:hover {
+  background: var(--panel-2) !important;
+  border-color: var(--accent) !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #06231f !important;
+}
+
+.flatpickr-day.today {
+  border-color: var(--accent-dim) !important;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: var(--muted) !important;
+  opacity: 0.4 !important;
+}
+
+.flatpickr-time input,
+.flatpickr-time .flatpickr-am-pm {
+  background: var(--panel-2) !important;
+  color: var(--text) !important;
+  font-family: "JetBrains Mono", monospace !important;
+}
+
+.flatpickr-time input:focus {
+  background: var(--panel-2) !important;
+}
+
+.numInputWrapper:hover,
+.flatpickr-time input:hover {
+  background: var(--line) !important;
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+  fill: var(--muted) !important;
+}
+
+.flatpickr-prev-month:hover svg,
+.flatpickr-next-month:hover svg {
+  fill: var(--accent) !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+  color: var(--text) !important;
+  font-family: "JetBrains Mono", monospace !important;
+}
+
+.flatpickr-input {
   width: 100%;
-  background: var(--panel-2);
+  background: var(--panel-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line) !important;
+  padding: 10px !important;
+  border-radius: var(--radius) !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  caret-color: var(--accent);
+}
+
+.flatpickr-input:focus {
+  outline: none !important;
+  border-color: var(--accent) !important;
+}
+
+/* remove o fundo branco que alguns browsers injetam */
+.flatpickr-input::selection {
+  background: var(--accent-dim);
   color: var(--text);
-  border: 1px solid var(--line);
-  padding: 10px;
-  border-radius: var(--radius);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.field input[type="time"]:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-/* Remove o fundo branco do picker nativo no Chrome */
-::-webkit-calendar-picker-indicator {
-  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(130deg);
-  cursor: pointer;
 }
