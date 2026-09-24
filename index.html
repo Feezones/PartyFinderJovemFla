@@ -35,10 +35,10 @@
       <select id="dg-select"></select>
     </div>
 
-<div class="field">
-  <label for="pt-time">Horário (opcional)</label>
-  <input id="pt-time" type="datetime-local" />
-</div>
+    <div class="field">
+      <label for="pt-time">Horário (opcional)</label>
+      <input id="pt-time" type="text" placeholder="Selecione data e hora..." readonly />
+    </div>
 
     <button id="create-btn" class="primary">Criar PT</button>
   </section>
@@ -48,12 +48,39 @@
     <div id="empty-state" class="empty-state">Nenhuma PT aberta agora. Crie a primeira ao lado.</div>
     <div class="pt-grid" id="pt-grid"></div>
   </section>
+
+  <section class="panel chat-wrap">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-status-dot"></div>
+        <span class="chat-title">#geral</span>
+      </div>
+      <div class="chat-header-actions">
+        <span class="online-count mono" id="msg-count">0 msgs</span>
+        <button id="chat-toggle" class="chat-toggle" type="button" aria-label="Minimizar chat" title="Minimizar chat">−</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty" id="chat-empty">
+        <div class="chat-empty-icon">💬</div>
+        <span>nenhuma mensagem ainda</span>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-input-wrap">
+        <textarea id="chat-input" rows="1" placeholder="mensagem... (Enter para enviar)" maxlength="400"></textarea>
+      </div>
+      <button id="chat-send" disabled>enviar</button>
+    </div>
+  </section>
 </main>
 
 <footer>JovemFla PT Terminal</footer>
 <div class="toast" id="toast"></div>
 
-<script type="module" src="app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

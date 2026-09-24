@@ -27,14 +27,17 @@ Qualquer pessoa que abrir a página vê e mexe nas mesmas PTs.
 
 ### 2. Ajustar as regras do Firestore
 Por padrão, o modo produção bloqueia tudo. Como não há login de usuário aqui
-(é só um nick digitado), a forma mais simples é liberar leitura/escrita só na
-coleção `parties`. Em **Firestore Database > Regras**, use algo como:
+(é só um nick digitado), a forma mais simples é liberar leitura/escrita só nas
+coleções `parties` e `chats`. Em **Firestore Database > Regras**, use algo como:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /parties/{partyId} {
+      allow read, write: if true;
+    }
+    match /chats/{messageId} {
       allow read, write: if true;
     }
   }

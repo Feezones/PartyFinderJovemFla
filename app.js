@@ -10,18 +10,18 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---------- Firebase ----------
-let app;
-let db;
-let partiesRef;
+let app, db, partiesRef, chatsRef;
 
 try {
   app = initializeApp(firebaseConfig);
   db = getFirestore(app);
   partiesRef = collection(db, "parties");
+  chatsRef = collection(db, "chats");
   window.jovemFlaFirebase = { app, db, config: firebaseConfig };
   console.info("Firebase inicializado com sucesso para o projeto:", firebaseConfig.projectId);
 } catch (err) {
@@ -35,22 +35,22 @@ if (!db || !partiesRef) {
 
 // ---------- Slot / role definitions ----------
 const SLOT_DEFS = [
-  { key: "tank", label: "Tank", css: "tank" },
-  { key: "hitter1", label: "Hitter", css: "hitter" },
-  { key: "hitter2", label: "Hitter", css: "hitter" },
+  { key: "tank",         label: "Tank",           css: "tank"    },
+  { key: "hitter1",     label: "Hitter",          css: "hitter"  },
+  { key: "hitter2",     label: "Hitter",          css: "hitter"  },
   { key: "hitterSuporte", label: "Hitter / Suporte", css: "support" }
 ];
 
 // ---------- DOM ----------
-const nickInput = document.getElementById("nick");
-const dgSelect = document.getElementById("dg-select");
-const createBtn = document.getElementById("create-btn");
-const grid = document.getElementById("pt-grid");
+const nickInput  = document.getElementById("nick");
+const dgSelect   = document.getElementById("dg-select");
+const createBtn  = document.getElementById("create-btn");
+const grid       = document.getElementById("pt-grid");
 const emptyState = document.getElementById("empty-state");
-const countEl = document.getElementById("pt-count");
-const toast = document.getElementById("toast");
-// adiciona com os outros DOM refs
-// substitui a linha: const timeInput = document.getElementById("pt-time");
+const countEl    = document.getElementById("pt-count");
+const toast      = document.getElementById("toast");
+
+// ---------- Flatpickr ----------
 let selectedDateTime = null;
 
 flatpickr("#pt-time", {
@@ -62,11 +62,11 @@ flatpickr("#pt-time", {
     firstDayOfWeek: 0,
     weekdays: {
       shorthand: ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"],
-      longhand: ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"]
+      longhand:  ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"]
     },
     months: {
       shorthand: ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],
-      longhand: ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+      longhand:  ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
     }
   },
   onChange: (dates) => {
@@ -79,6 +79,7 @@ nickInput.value = localStorage.getItem("jovemfla_nick") || "";
 nickInput.addEventListener("input", () => {
   localStorage.setItem("jovemfla_nick", nickInput.value.trim());
   syncCreateBtn();
+  syncChatSend();
 });
 
 function getNick() {
@@ -113,16 +114,16 @@ createBtn.addEventListener("click", async () => {
   if (!nick) return;
   createBtn.disabled = true;
   try {
-await addDoc(partiesRef, {
-  dg: dgSelect.value,
-  createdBy: nick,
-  createdAt: serverTimestamp(),
-  scheduledTime: selectedDateTime ? selectedDateTime.toISOString() : null,
-  tank: null,
-  hitter1: null,
-  hitter2: null,
-  hitterSuporte: null
-});
+    await addDoc(partiesRef, {
+      dg: dgSelect.value,
+      createdBy: nick,
+      createdAt: serverTimestamp(),
+      scheduledTime: selectedDateTime ? selectedDateTime.toISOString() : null,
+      tank: null,
+      hitter1: null,
+      hitter2: null,
+      hitterSuporte: null
+    });
     showToast("PT criada!");
   } catch (err) {
     console.error(err);
@@ -132,7 +133,7 @@ await addDoc(partiesRef, {
   }
 });
 
-// ---------- Join / leave (transaction — avoids two people grabbing the same slot) ----------
+// ---------- Join / leave ----------
 async function joinSlot(partyId, slotKey) {
   const nick = getNick();
   if (!nick) {
@@ -146,7 +147,6 @@ async function joinSlot(partyId, slotKey) {
       if (!snap.exists()) throw new Error("PT não existe mais.");
       const data = snap.data();
 
-      // already in this party? move them instead of duplicating
       const alreadyKey = SLOT_DEFS.find((s) => data[s.key] === nick)?.key;
       if (alreadyKey && alreadyKey !== slotKey) {
         tx.update(ref, { [alreadyKey]: null });
@@ -182,7 +182,7 @@ async function closeParty(partyId) {
   }
 }
 
-// ---------- Rendering ----------
+// ---------- Helpers ----------
 function timeAgo(timestamp) {
   if (!timestamp) return "agora";
   const seconds = Math.floor((Date.now() - timestamp.toDate().getTime()) / 1000);
@@ -193,6 +193,21 @@ function timeAgo(timestamp) {
   return `${hours}h atrás`;
 }
 
+function formatScheduled(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+// ---------- Render party card ----------
 function renderParty(id, data) {
   const nick = getNick();
   const card = document.createElement("div");
@@ -204,19 +219,21 @@ function renderParty(id, data) {
     <div>
       <div class="dg-name">${escapeHtml(data.dg)}</div>
       <div class="pt-meta">
-  host: ${escapeHtml(data.createdBy)}
-  ${data.scheduledTime ? `· ⏰ ${data.scheduledTime}` : ""}
-  · ${timeAgo(data.createdAt)}
-</div>
+        host: ${escapeHtml(data.createdBy)}
+        ${data.scheduledTime ? `· ⏰ ${formatScheduled(data.scheduledTime)}` : ""}
+        · ${timeAgo(data.createdAt)}
+      </div>
     </div>
   `;
-if (nick === data.createdBy) {
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "close-btn";
-  closeBtn.textContent = "Fechar PT";
-  closeBtn.addEventListener("click", () => closeParty(id));
-  head.appendChild(closeBtn);
-}
+
+  if (nick === data.createdBy) {
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "close-btn";
+    closeBtn.textContent = "Fechar PT";
+    closeBtn.addEventListener("click", () => closeParty(id));
+    head.appendChild(closeBtn);
+  }
+
   card.appendChild(head);
 
   const slotsWrap = document.createElement("div");
@@ -258,37 +275,152 @@ if (nick === data.createdBy) {
   return card;
 }
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str ?? "";
-  return div.innerHTML;
+// ---------- Realtime listener — parties ----------
+if (partiesRef) {
+  const q = query(partiesRef, orderBy("createdAt", "desc"));
+  onSnapshot(
+    q,
+    (snapshot) => {
+      grid.innerHTML = "";
+      countEl.textContent = snapshot.size;
+      if (snapshot.empty) {
+        emptyState.style.display = "block";
+        return;
+      }
+      emptyState.style.display = "none";
+      snapshot.forEach((docSnap) => {
+        grid.appendChild(renderParty(docSnap.id, docSnap.data()));
+      });
+    },
+    (err) => {
+      console.error("Firestore connection error:", err);
+      showToast("Erro ao conectar no Firestore — verifique o projeto, as regras e a config do Firebase.");
+    }
+  );
 }
 
-// ---------- Realtime listener ----------
-const q = query(partiesRef, orderBy("createdAt", "desc"));
-onSnapshot(
-  q,
-  (snapshot) => {
-    grid.innerHTML = "";
-    countEl.textContent = snapshot.size;
-    if (snapshot.empty) {
-      emptyState.style.display = "block";
-      return;
-    }
-    emptyState.style.display = "none";
-    snapshot.forEach((docSnap) => {
-      grid.appendChild(renderParty(docSnap.id, docSnap.data()));
-    });
-  },
-  (err) => {
-    console.error("Firestore connection error:", err);
-    showToast("Erro ao conectar no Firestore — verifique o projeto, as regras e a config do Firebase.");
-  }
-);
+setInterval(() => {}, 60000);
 
-// re-render periodically so "X min atrás" stays fresh
-setInterval(() => {
-  const active = document.querySelectorAll(".pt-meta");
-  // cheap refresh: only re-triggers on next snapshot in practice;
-  // full timestamp refresh happens automatically on any write.
-}, 60000);
+// ── Chat ─────────────────────────────────────────────────────────
+
+const chatInput    = document.getElementById("chat-input");
+const chatSend     = document.getElementById("chat-send");
+const chatMessages = document.getElementById("chat-messages");
+const chatEmpty    = document.getElementById("chat-empty");
+const msgCount     = document.getElementById("msg-count");
+const chatToggle   = document.getElementById("chat-toggle");
+
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function renderChat(msgs) {
+  const atBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 60;
+
+  chatMessages.innerHTML = "";
+  chatMessages.appendChild(chatEmpty);
+  chatEmpty.style.display = msgs.length ? "none" : "flex";
+  msgCount.textContent = `${msgs.length} msgs`;
+
+  let lastNick = null;
+  let lastTs   = null;
+
+  msgs.forEach((m) => {
+    if (lastTs && m.ts - lastTs > 10 * 60 * 1000) {
+      const sep = document.createElement("div");
+      sep.className = "msg-system";
+      sep.textContent = formatTime(m.ts);
+      chatMessages.appendChild(sep);
+      lastNick = null;
+    }
+
+    const grouped = m.nick === lastNick;
+    const isSelf  = m.nick === getNick();
+    const div = document.createElement("div");
+    div.className = "msg" + (grouped ? " grouped" : "");
+    div.innerHTML = `
+      <div class="msg-meta">
+        <span class="msg-nick${isSelf ? " self" : ""}">${escapeHtml(m.nick)}</span>
+        <span class="msg-time">${formatTime(m.ts)}</span>
+      </div>
+      <div class="msg-text">${escapeHtml(m.text)}</div>
+    `;
+    chatMessages.appendChild(div);
+    lastNick = m.nick;
+    lastTs   = m.ts;
+  });
+
+  if (atBottom) chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Realtime listener — chat
+if (chatsRef) {
+  const qChat = query(chatsRef, orderBy("createdAt", "asc"), limit(100));
+  onSnapshot(
+    qChat,
+    (snap) => {
+      const msgs = snap.docs.map((d) => ({
+        nick: d.data().nick,
+        text: d.data().text,
+        ts:   d.data().createdAt?.toDate().getTime() ?? Date.now()
+      }));
+      renderChat(msgs);
+    },
+    (err) => {
+      console.error("Chat Firestore connection error:", err);
+      showToast("Não foi possível carregar o chat — verifique as regras do Firebase.");
+    }
+  );
+} else {
+  renderChat([]);
+}
+
+// Envio
+async function sendChatMessage() {
+  const text = chatInput.value.trim();
+  const nick = getNick();
+  if (!text || !nick) return;
+  chatSend.disabled = true;
+  try {
+    await addDoc(chatsRef, { nick, text, createdAt: serverTimestamp() });
+    chatInput.value = "";
+    chatInput.style.height = "auto";
+  } catch (err) {
+    console.error("Erro ao enviar mensagem:", err);
+    if (err.code === "permission-denied") {
+      showToast("Chat bloqueado pelas regras do Firestore.");
+    } else if (!chatsRef) {
+      showToast("Chat indisponível: Firebase não inicializou.");
+    } else {
+      showToast("Erro ao enviar mensagem — veja o console.");
+    }
+  } finally {
+    syncChatSend();
+  }
+}
+
+function syncChatSend() {
+  chatSend.disabled = chatInput.value.trim().length === 0 || getNick().length === 0;
+}
+
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = "auto";
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
+  syncChatSend();
+});
+
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!chatSend.disabled) sendChatMessage();
+  }
+});
+
+chatSend.addEventListener("click", sendChatMessage);
+
+chatToggle.addEventListener("click", () => {
+  const isCollapsed = document.querySelector(".chat-wrap").classList.toggle("collapsed");
+  chatToggle.textContent = isCollapsed ? "+" : "−";
+  chatToggle.setAttribute("aria-label", isCollapsed ? "Expandir chat" : "Minimizar chat");
+  chatToggle.title = isCollapsed ? "Expandir chat" : "Minimizar chat";
+});
