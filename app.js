@@ -346,6 +346,33 @@ function formatScheduled(iso) {
   });
 }
 
+function getPartyFillCount(data) {
+  return SLOT_DEFS.filter((slot) => Boolean(data[slot.key])).length;
+}
+
+function getPartyCountdownText(iso) {
+  if (!iso) return "sem horário";
+  const deadline = new Date(iso).getTime();
+  const diff = deadline - Date.now();
+
+  if (diff <= 0) return "agora";
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+  }
+
+  if (minutes > 0) {
+    return `${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+  }
+
+  return `${String(seconds).padStart(2, "0")}s`;
+}
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str ?? "";
@@ -356,7 +383,10 @@ function escapeHtml(str) {
 function renderParty(id, data) {
   const nick = getNick();
   const card = document.createElement("div");
-  card.className = "pt-card";
+  const filledSlots = getPartyFillCount(data);
+  const isFull = filledSlots >= SLOT_DEFS.length;
+  card.className = "pt-card" + (isFull ? " full" : " open");
+  card.dataset.deadline = data.scheduledTime || "";
 
   const head = document.createElement("div");
   head.className = "pt-head";
@@ -381,6 +411,14 @@ function renderParty(id, data) {
   }
 
   card.appendChild(head);
+
+  const status = document.createElement("div");
+  status.className = "pt-status" + (isFull ? " full" : " open");
+  status.innerHTML = `
+    <span class="pt-status-text">${isFull ? "PT cheia" : "Vaga disponível"}</span>
+    <span class="pt-countdown">${getPartyCountdownText(data.scheduledTime)}</span>
+  `;
+  card.appendChild(status);
 
   const slotsWrap = document.createElement("div");
   slotsWrap.className = "slots";
@@ -448,7 +486,15 @@ if (partiesRef) {
   );
 }
 
-setInterval(() => {}, 60000);
+setInterval(() => {
+  document.querySelectorAll(".pt-card[data-deadline]").forEach((card) => {
+    const deadline = card.dataset.deadline;
+    if (!deadline) return;
+    const countdownEl = card.querySelector(".pt-countdown");
+    if (!countdownEl) return;
+    countdownEl.textContent = getPartyCountdownText(deadline);
+  });
+}, 1000);
 
 // ── Chat ─────────────────────────────────────────────────────────
 
