@@ -380,6 +380,19 @@ function escapeHtml(str) {
 }
 
 // ---------- Render party card ----------
+const DG_IMAGES = [
+  { match: "susanomon",   file: "susanodg.jpg" },
+  { match: "gulus",       file: "gulus.jpg" },
+  { match: "chimairamon", file: "chimera.jpg" },
+  { match: "dark web",    file: "armage.jpg" },
+  { match: "milfhaim",    file: "icedevimon.jpg" },
+  { match: "datadungeon", file: "kizuna.jpg" }
+];
+
+function getDgImage(dg) {
+  const name = String(dg ?? "").toLowerCase();
+  return DG_IMAGES.find((item) => name.includes(item.match))?.file ?? null;
+}
 const ICON_ATTRS = 'class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
 const ICON_USER  = `<svg ${ICON_ATTRS}><circle cx="8" cy="5.5" r="2.75"/><path d="M2.75 14c.5-2.6 2.6-4 5.25-4s4.75 1.4 5.25 4"/></svg>`;
 const ICON_CLOCK = `<svg ${ICON_ATTRS}><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.25 1.5"/></svg>`;
@@ -393,6 +406,12 @@ function renderParty(id, data) {
   const isFull = filledSlots >= SLOT_DEFS.length;
   card.className = "pt-card" + (isFull ? " full" : " open");
   card.dataset.deadline = data.scheduledTime || "";
+
+  const dgImage = getDgImage(data.dg);
+  if (dgImage) {
+    card.classList.add("has-bg");
+    card.style.setProperty("--pt-bg", `url("img/${dgImage}")`);
+  }
 
   const head = document.createElement("div");
   head.className = "pt-head";

@@ -366,6 +366,52 @@ section.parties h2 .count {
 
 .pt-card:hover { transform: translateY(-1px); }
 
+/* imagem da DG: cover preserva proporção e resolução original; o véu garante leitura do texto */
+.pt-card.has-bg {
+  background:
+    linear-gradient(180deg, rgba(10, 14, 23, 0.05) 0%, rgba(10, 14, 23, 0.25) 100%),
+    var(--pt-bg) center / cover no-repeat,
+    var(--surface);
+}
+
+/* a imagem fica visível; o texto ganha contraste por faixas e chips escuros localizados */
+.pt-card.has-bg .pt-head {
+  background: linear-gradient(180deg, rgba(8, 11, 19, 0.82) 0%, rgba(8, 11, 19, 0.35) 100%);
+}
+
+.pt-card.has-bg .slots {
+  padding: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(8, 11, 19, 0) 0%, rgba(8, 11, 19, 0.3) 100%);
+}
+
+.pt-card.has-bg .slot-row {
+  background: rgba(8, 11, 19, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pt-card.has-bg .pt-status {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.pt-card.has-bg .pt-status.open { background: rgba(6, 42, 30, 0.9); color: #6ee7b7; }
+.pt-card.has-bg .pt-status.full { background: rgba(62, 14, 14, 0.9); color: #fca5a5; }
+
+.pt-card.has-bg .dg-name {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.pt-card.has-bg .pt-meta { color: #e3e8f5; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.pt-card.has-bg .meta-item.highlight { color: #ffc15a; }
+.pt-card.has-bg .pt-countdown { background: rgba(0, 0, 0, 0.55); color: #fff; }
+.pt-card.has-bg .slot-name { color: #fff; }
+.pt-card.has-bg .slot-name.vago { color: #b4bdd6; }
+.pt-card.has-bg .role-tag { background-color: rgba(8, 11, 19, 0.85); }
+.pt-card.has-bg .slot-row:hover { background: rgba(8, 11, 19, 0.85); }
+
 .pt-card.open { border-color: rgba(52, 211, 153, 0.4); }
 .pt-card.full { border-color: rgba(248, 113, 113, 0.35); }
 
