@@ -14,9 +14,9 @@
 
 <header class="hud">
   <div>
-    <div class="brand">
+    <h1 class="brand">
       <span class="guild mono">Jovem<span>Fla</span></span>
-    </div>
+    </h1>
     <div class="subtitle">Party Builder Jovem Fla by: Feezão</div>
   </div>
   <div class="identity">
@@ -60,7 +60,7 @@
     <div class="pt-grid" id="pt-grid"></div>
   </section>
 
-  <section class="panel chat-wrap">
+  <section class="panel chat-wrap" aria-label="Chat geral">
     <div class="chat-header">
       <div class="chat-header-left">
         <div class="chat-status-dot"></div>
@@ -81,15 +81,15 @@
 
     <div class="chat-input-area">
       <div class="chat-input-wrap">
-        <textarea id="chat-input" rows="1" placeholder="DIGITE AQUI..." maxlength="400"></textarea>
+        <textarea id="chat-input" rows="1" placeholder="Digite uma mensagem..." maxlength="400" aria-label="Mensagem"></textarea>
       </div>
-      <button id="chat-send" disabled>enviar</button>
+      <button id="chat-send" type="button" disabled>Enviar</button>
     </div>
   </section>
 </main>
 
 <footer>JovemFla PT Terminal</footer>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="modal-backdrop" id="party-switch-modal" hidden>
   <div class="party-switch-modal" role="dialog" aria-modal="true" aria-labelledby="party-switch-title">

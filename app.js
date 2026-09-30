@@ -113,7 +113,7 @@ function syncCreateBtn() {
   createBtn.disabled = nick.length === 0 || Boolean(currentParty);
   createBtn.title = currentParty
     ? "Escolha um horário com pelo menos 1 hora de diferença da sua PT atual."
-    : "";
+    : nick.length === 0 ? "Digite seu nick para criar uma PT." : "";
 }
 syncCreateBtn();
 
@@ -380,6 +380,12 @@ function escapeHtml(str) {
 }
 
 // ---------- Render party card ----------
+const ICON_ATTRS = 'class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+const ICON_USER  = `<svg ${ICON_ATTRS}><circle cx="8" cy="5.5" r="2.75"/><path d="M2.75 14c.5-2.6 2.6-4 5.25-4s4.75 1.4 5.25 4"/></svg>`;
+const ICON_CLOCK = `<svg ${ICON_ATTRS}><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.25 1.5"/></svg>`;
+const ICON_FLAG  = `<svg ${ICON_ATTRS}><path d="M3.5 14V2.5M3.5 3h8l-1.75 2.75L11.5 8.5h-8"/></svg>`;
+const ICON_AGO   = `<svg ${ICON_ATTRS}><path d="M2.5 8a5.5 5.5 0 1 0 1.7-4M2.5 2.5v3h3"/></svg>`;
+
 function renderParty(id, data) {
   const nick = getNick();
   const card = document.createElement("div");
@@ -394,10 +400,10 @@ function renderParty(id, data) {
     <div>
       <div class="dg-name">${escapeHtml(data.dg)}</div>
       <div class="pt-meta">
-        host: ${escapeHtml(data.createdBy)}
-        ${data.scheduledTime ? `· ⏰ ${formatScheduled(data.scheduledTime)}` : ""}
-        ${Number(data.minPasses) > 0 ? `· 🏁 ${Number(data.minPasses)} passes` : ""}
-        · ${timeAgo(data.createdAt)}
+        <span class="meta-item" title="Host">${ICON_USER}${escapeHtml(data.createdBy)}</span>
+        ${data.scheduledTime ? `<span class="meta-item" title="Horário">${ICON_CLOCK}${formatScheduled(data.scheduledTime)}</span>` : ""}
+        ${Number(data.minPasses) > 0 ? `<span class="meta-item highlight" title="Mínimo de passes">${ICON_FLAG}${Number(data.minPasses)} passes</span>` : ""}
+        <span class="meta-item" title="Criada">${ICON_AGO}${timeAgo(data.createdAt)}</span>
       </div>
     </div>
   `;
@@ -416,6 +422,7 @@ function renderParty(id, data) {
   status.className = "pt-status" + (isFull ? " full" : " open");
   status.innerHTML = `
     <span class="pt-status-text">${isFull ? "PT cheia" : "Vaga disponível"}</span>
+    <span class="pt-fill" title="${filledSlots} de ${SLOT_DEFS.length} vagas preenchidas">${filledSlots}/${SLOT_DEFS.length}</span>
     <span class="pt-countdown">${getPartyCountdownText(data.scheduledTime)}</span>
   `;
   card.appendChild(status);
@@ -621,3 +628,6 @@ chatToggle.addEventListener("click", () => {
   chatToggle.title = isCollapsed ? "Expandir chat" : "Minimizar chat";
   if (!isCollapsed) chatMessages.scrollTop = chatMessages.scrollHeight;
 });
+
+// Em telas pequenas o chat começa minimizado para não cobrir as PTs.
+if (window.matchMedia("(max-width: 640px)").matches) chatToggle.click();
